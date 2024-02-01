@@ -1,32 +1,64 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"net"
 	"os"
 )
 
 func main() {
-	l, err := net.Listen("tcp", "0.0.0.0:6379")
+	listener, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
 		fmt.Println("Failed to bind to port 6379")
 		os.Exit(1)
 	}
-	conn, err := l.Accept()
+	defer listener.Close()
+
+	Run(listener)
+}
+
+func Run(listener net.Listener) {
+	conn, err := listener.Accept()
 	if err != nil {
 		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
+		return
 	}
+	defer func() {
+		fmt.Println("Closing connection to ", conn.RemoteAddr().String())
+		err = conn.Close()
+		if err != nil {
+			fmt.Println("Error closing connection: ", err.Error())
+		}
+	}()
+	fmt.Printf("Accepted connection from %s\n", conn.RemoteAddr().String())
 
-	_, err = conn.Write([]byte("+PONG\r\n"))
-	if err != nil {
-		fmt.Println("Error writing to client: ", err.Error())
-		os.Exit(1)
+	reader := bufio.NewReader(conn)
+	hasRead := false
+
+	for {
+		if hasRead && reader.Buffered() <= 0 {
+			return
+		}
+		hasRead = true
+
+		cmd, err := reader.ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				return
+			} else {
+				fmt.Println("Error reading request: ", err.Error())
+				return
+			}
+		}
+		fmt.Println("Client sent: ", cmd)
+
+		_, err = conn.Write([]byte("+PONG\r\n"))
+		if err != nil {
+			fmt.Println("Error writing to client: ", err.Error())
+			return
+		}
+		fmt.Println("Wrote +PONG to client")
 	}
-
-	err = conn.Close()
-	if err != nil {
-		fmt.Println("Error closing connection: ", err.Error())
-	}
-
 }
