@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"net"
@@ -34,16 +33,10 @@ func Run(listener net.Listener) {
 	}()
 	fmt.Printf("Accepted connection from %s\n", conn.RemoteAddr().String())
 
-	reader := bufio.NewReader(conn)
-	hasRead := false
+	buf := make([]byte, 128)
 
 	for {
-		if hasRead && reader.Buffered() <= 0 {
-			return
-		}
-		hasRead = true
-
-		cmd, err := reader.ReadString('\n')
+		_, err := conn.Read(buf)
 		if err != nil {
 			if err == io.EOF {
 				return
@@ -52,7 +45,7 @@ func Run(listener net.Listener) {
 				return
 			}
 		}
-		fmt.Println("Client sent: ", cmd)
+		fmt.Println("Client sent: ", string(buf))
 
 		_, err = conn.Write([]byte("+PONG\r\n"))
 		if err != nil {
