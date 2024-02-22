@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	listener, err := net.Listen("tcp", "0.0.0.0:6379")
+	listener, err := net.Listen("tcp", "192.168.33.1:6379")
 	if err != nil {
 		fmt.Println("Failed to bind to port 6379")
 		os.Exit(1)
@@ -19,14 +19,21 @@ func main() {
 }
 
 func Run(listener net.Listener) {
-	conn, err := listener.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		return
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			break
+		}
+
+		go handleClient(conn)
 	}
+}
+
+func handleClient(conn net.Conn) {
 	defer func() {
 		fmt.Println("Closing connection to ", conn.RemoteAddr().String())
-		err = conn.Close()
+		err := conn.Close()
 		if err != nil {
 			fmt.Println("Error closing connection: ", err.Error())
 		}
