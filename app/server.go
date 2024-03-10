@@ -5,10 +5,12 @@ import (
 	"io"
 	"net"
 	"os"
+
+	"github.com/codecrafters-io/redis-starter-go/app/commands"
 )
 
 func main() {
-	listener, err := net.Listen("tcp", "0.0.0.0:6379")
+	listener, err := net.Listen("tcp", "192.168.33.1:6379")
 	if err != nil {
 		fmt.Println("Failed to bind to port 6379")
 		os.Exit(1)
@@ -54,11 +56,13 @@ func handleClient(conn net.Conn) {
 		}
 		fmt.Println("Client sent: ", string(buf))
 
-		_, err = conn.Write([]byte("+PONG\r\n"))
+		response := commands.HandleRequest(&buf)
+		fmt.Printf("Writing response to client: %s", string(response))
+
+		_, err = conn.Write(response)
 		if err != nil {
 			fmt.Println("Error writing to client: ", err.Error())
 			return
 		}
-		fmt.Println("Wrote +PONG to client")
 	}
 }
