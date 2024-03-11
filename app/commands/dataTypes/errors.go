@@ -26,3 +26,12 @@ func (e InvalidSyntax) Error() string {
 	return "invalid syntax"
 }
 func (e *InvalidSyntax) GetPrefix() err.ErrPrefix { return err.SYNTAX }
+
+type MissingArgument struct {
+	Cmd string
+}
+
+func (e MissingArgument) Error() string {
+	return fmt.Sprintf("missing argument for command %s", e.Cmd)
+}
+func (e *MissingArgument) GetPrefix() err.ErrPrefix { return err.ERR }

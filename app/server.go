@@ -21,6 +21,9 @@ func main() {
 }
 
 func Run(listener net.Listener) {
+
+	db := make(map[string]string)
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -28,11 +31,11 @@ func Run(listener net.Listener) {
 			break
 		}
 
-		go handleClient(conn)
+		go handleClient(conn, db)
 	}
 }
 
-func handleClient(conn net.Conn) {
+func handleClient(conn net.Conn, db map[string]string) {
 	defer func() {
 		fmt.Println("Closing connection to ", conn.RemoteAddr().String())
 		err := conn.Close()
@@ -56,7 +59,7 @@ func handleClient(conn net.Conn) {
 		}
 		fmt.Println("Client sent: ", string(buf))
 
-		response := commands.HandleRequest(&buf)
+		response := commands.HandleRequest(&buf, db)
 		fmt.Printf("Writing response to client: %s", string(response))
 
 		_, err = conn.Write(response)

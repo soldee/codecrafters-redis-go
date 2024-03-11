@@ -1,6 +1,8 @@
 package dataTypes
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const (
 	SimpleString = '+'
@@ -20,4 +22,8 @@ func GetSimpleString(raw *[]byte) (string, error) {
 
 func ToSimpleError(err RedisError) []byte {
 	return []byte(fmt.Sprintf("%c%s %s%s", SimpleError, err.GetPrefix(), err.Error(), SEP))
+}
+
+func ToSimpleString(str string) []byte {
+	return []byte(fmt.Sprintf("%c%s%s", SimpleString, str, SEP))
 }

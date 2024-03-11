@@ -10,6 +10,8 @@ const (
 	BulkString = '$'
 )
 
+var NULL_BULK_STRING []byte = []byte(fmt.Sprintf("%c-1%s", BulkString, SEP))
+
 func GetBulkString(raw *[]byte) (string, error) {
 	lengthBytes, nRead, err := GetUntilSeparator(raw)
 	if err != nil {
@@ -64,4 +66,8 @@ func GetNextStringInArray(raw *[]byte, arrayLength *int) (string, error) {
 	default:
 		return "", fmt.Errorf("invalid type, expected valid string symbol but got '%v'", dataType)
 	}
+}
+
+func ToBulkString(str string) []byte {
+	return []byte(fmt.Sprintf("%c%d%s%s%s", BulkString, len(str), SEP, str, SEP))
 }
