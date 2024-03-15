@@ -3,7 +3,7 @@ package commands_test
 import (
 	"testing"
 
-	"github.com/codecrafters-io/redis-starter-go/app/commands"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/commands"
 )
 
 func TestHandleEcho(t *testing.T) {

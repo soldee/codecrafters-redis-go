@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/codecrafters-io/redis-starter-go/app/commands/dataTypes"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/commands/dataTypes"
 )
 
 func TestGetSimpleString(t *testing.T) {

@@ -6,7 +6,8 @@ import (
 	"net"
 	"os"
 
-	"github.com/codecrafters-io/redis-starter-go/app/commands"
+	"github.com/codecrafters-io/redis-starter-go/app/internal"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/commands"
 )
 
 func main() {
@@ -22,7 +23,7 @@ func main() {
 
 func Run(listener net.Listener) {
 
-	db := make(map[string]string)
+	db := internal.InitializeDB()
 
 	for {
 		conn, err := listener.Accept()
@@ -35,7 +36,7 @@ func Run(listener net.Listener) {
 	}
 }
 
-func handleClient(conn net.Conn, db map[string]string) {
+func handleClient(conn net.Conn, db internal.DB) {
 	defer func() {
 		fmt.Println("Closing connection to ", conn.RemoteAddr().String())
 		err := conn.Close()

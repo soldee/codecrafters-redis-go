@@ -3,10 +3,11 @@ package commands
 import (
 	"strings"
 
-	"github.com/codecrafters-io/redis-starter-go/app/commands/dataTypes"
+	"github.com/codecrafters-io/redis-starter-go/app/internal"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/commands/dataTypes"
 )
 
-func HandleRequest(req *[]byte, db map[string]string) []byte {
+func HandleRequest(req *[]byte, db internal.DB) []byte {
 	if len(*req) < 2 {
 		return dataTypes.ToSimpleError(&dataTypes.InvalidSyntax{})
 	}
@@ -46,7 +47,7 @@ func HandleRequest(req *[]byte, db map[string]string) []byte {
 	}
 }
 
-func HandleCommand(cmd string, request *[]byte, arrayLength int, db map[string]string) []byte {
+func HandleCommand(cmd string, request *[]byte, arrayLength int, db internal.DB) []byte {
 	switch Command(strings.ToLower(cmd)) {
 	case PING:
 		return []byte("+PONG\r\n")
