@@ -11,6 +11,7 @@ import (
 )
 
 func main() {
+
 	listener, err := net.Listen("tcp", "0.0.0.0:6379")
 	if err != nil {
 		fmt.Println("Failed to bind to port 6379")
@@ -23,6 +24,7 @@ func main() {
 
 func Run(listener net.Listener) {
 
+	config := internal.InitializeConfig(os.Args[1:])
 	db := internal.InitializeDB()
 
 	for {
@@ -32,11 +34,11 @@ func Run(listener net.Listener) {
 			break
 		}
 
-		go handleClient(conn, db)
+		go handleClient(conn, db, config)
 	}
 }
 
-func handleClient(conn net.Conn, db internal.DB) {
+func handleClient(conn net.Conn, db internal.DB, config internal.Config) {
 	defer func() {
 		fmt.Println("Closing connection to ", conn.RemoteAddr().String())
 		err := conn.Close()
@@ -60,7 +62,7 @@ func handleClient(conn net.Conn, db internal.DB) {
 		}
 		fmt.Println("Client sent: ", string(buf))
 
-		response := commands.HandleRequest(&buf, db)
+		response := commands.HandleRequest(&buf, db, config)
 		fmt.Printf("Writing response to client: %s", string(response))
 
 		_, err = conn.Write(response)

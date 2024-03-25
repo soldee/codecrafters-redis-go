@@ -71,3 +71,15 @@ func GetNextStringInArray(raw *[]byte, arrayLength *int) (string, error) {
 func ToBulkString(str string) []byte {
 	return []byte(fmt.Sprintf("%c%d%s%s%s", BulkString, len(str), SEP, str, SEP))
 }
+
+func ToArray(in ...[]byte) []byte {
+	var arrayInitial = fmt.Sprintf("%c%d%s", Array, len(in), SEP)
+	var res = make([]byte, 0, len(in)+len(arrayInitial))
+
+	res = append(res, []byte(arrayInitial)...)
+
+	for i := 0; i < len(in); i++ {
+		res = append(res, in[i]...)
+	}
+	return res
+}

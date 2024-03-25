@@ -14,11 +14,12 @@ import (
 type Command string
 
 const (
-	NOP  Command = ""
-	PING Command = "ping"
-	ECHO Command = "echo"
-	SET  Command = "set"
-	GET  Command = "get"
+	NOP    Command = ""
+	PING   Command = "ping"
+	ECHO   Command = "echo"
+	SET    Command = "set"
+	GET    Command = "get"
+	CONFIG Command = "config"
 )
 
 type Option string

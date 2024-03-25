@@ -7,7 +7,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/internal/commands/dataTypes"
 )
 
-func HandleRequest(req *[]byte, db internal.DB) []byte {
+func HandleRequest(req *[]byte, db internal.DB, config internal.Config) []byte {
 	if len(*req) < 2 {
 		return dataTypes.ToSimpleError(&dataTypes.InvalidSyntax{})
 	}
@@ -26,28 +26,28 @@ func HandleRequest(req *[]byte, db internal.DB) []byte {
 		if err != nil {
 			return dataTypes.ToSimpleError(&dataTypes.InvalidSyntax{})
 		}
-		return HandleCommand(cmd, req, arrLength, db)
+		return HandleCommand(cmd, req, arrLength, db, config)
 
 	case dataTypes.SimpleString:
 		cmd, err := dataTypes.GetSimpleString(req)
 		if err != nil {
 			return dataTypes.ToSimpleError(&dataTypes.InvalidSyntax{})
 		}
-		return HandleCommand(cmd, req, 0, db)
+		return HandleCommand(cmd, req, 0, db, config)
 
 	case dataTypes.BulkString:
 		cmd, err := dataTypes.GetBulkString(req)
 		if err != nil {
 			return dataTypes.ToSimpleError(&dataTypes.InvalidSyntax{})
 		}
-		return HandleCommand(cmd, req, 0, db)
+		return HandleCommand(cmd, req, 0, db, config)
 
 	default:
 		return dataTypes.ToSimpleError(&dataTypes.InvalidSyntax{})
 	}
 }
 
-func HandleCommand(cmd string, request *[]byte, arrayLength int, db internal.DB) []byte {
+func HandleCommand(cmd string, request *[]byte, arrayLength int, db internal.DB, config internal.Config) []byte {
 	switch Command(strings.ToLower(cmd)) {
 	case PING:
 		return []byte("+PONG\r\n")
@@ -57,6 +57,8 @@ func HandleCommand(cmd string, request *[]byte, arrayLength int, db internal.DB)
 		return HandleSet(request, arrayLength, db)
 	case GET:
 		return HandleGet(request, arrayLength, db)
+	case CONFIG:
+		return HandleConfig(request, arrayLength, config)
 	default:
 		return dataTypes.ToSimpleError(&dataTypes.UnknownCommand{Cmd: cmd})
 	}

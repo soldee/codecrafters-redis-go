@@ -65,3 +65,13 @@ func TestSetArray(t *testing.T) {
 		t.Errorf("Expected array data to start at '$' but received unexpected result '%d'", raw[0])
 	}
 }
+
+func TestToArray(t *testing.T) {
+	var raw1 = dataTypes.ToBulkString("hi")
+	var raw2 = dataTypes.ToBulkString("there")
+
+	response := dataTypes.ToArray(raw1, raw2)
+	if string(response) != "*2\r\n$2\r\nhi\r\n$5\r\nthere\r\n" {
+		t.Errorf("Returned response different than '*2\r\n$2\r\nhi\r\n$5\r\nthere\r\n': '%s'", string(response))
+	}
+}
