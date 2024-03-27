@@ -34,6 +34,6 @@ func handleConfigGet(raw *[]byte, arrayLength int, config internal.Config) []byt
 		return dataTypes.ToSimpleError(&dataTypes.InvalidSyntax{})
 	}
 
-	value, _ := config.GetValue(key)
+	value := config.GetValue(key)
 	return dataTypes.ToArray(dataTypes.ToBulkString(key), dataTypes.ToBulkString(value))
 }

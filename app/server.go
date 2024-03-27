@@ -8,6 +8,7 @@ import (
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
 	"github.com/codecrafters-io/redis-starter-go/app/internal/commands"
+	"github.com/codecrafters-io/redis-starter-go/app/internal/rdb"
 )
 
 func main() {
@@ -26,6 +27,7 @@ func Run(listener net.Listener) {
 
 	config := internal.InitializeConfig(os.Args[1:])
 	db := internal.InitializeDB()
+	rdb.ParseRdb(db, config)
 
 	for {
 		conn, err := listener.Accept()

@@ -31,11 +31,11 @@ func InitializeConfig(args []string) Config {
 	return config
 }
 
-func (config Config) GetValue(key string) (string, bool) {
+func (config Config) GetValue(key string) string {
 	config.mu.RLock()
-	value, exists := config.General[key]
+	value, _ := config.General[key]
 	config.mu.RUnlock()
-	return value, exists
+	return value
 }
 
 func (config Config) SetValue(key string, value string) {
