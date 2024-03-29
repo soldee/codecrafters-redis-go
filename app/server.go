@@ -27,7 +27,7 @@ func Run(listener net.Listener) {
 
 	config := internal.InitializeConfig(os.Args[1:])
 	db := internal.InitializeDB()
-	rdb.ParseRdb(db, config)
+	rdb.Parse(db, config)
 
 	for {
 		conn, err := listener.Accept()

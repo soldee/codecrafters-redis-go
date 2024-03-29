@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"io"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -13,92 +13,134 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
 )
 
-func ParseRdb(db internal.DB, config internal.Config) {
-	dir := config.GetValue(internal.Dir)
-	dbFilename := config.GetValue(internal.Dbfilename)
-	if dir == "" || dbFilename == "" {
-		return
-	}
-	rdbPath := filepath.Join(dir, dbFilename)
+type ValueType byte
 
-	file, err := os.Open(rdbPath)
-	if err != nil {
-		fmt.Printf("error reading RDB file '%s'. Error is: %s", rdbPath, err)
-		return
-	}
-	defer file.Close()
+const (
+	StringType ValueType = iota
+	ListType
+	SetType
+	SortedSetType
+	HashType
+	ZipMapType
+	ZipListType
+	IntSetType
+	SortedSetInZipListType
+	HashMapInZipListType
+	ListInQuickListType
+)
 
-	r := bufio.NewReader(file)
-	b := make([]byte, 5)
-	_, err = io.ReadFull(r, b)
+func Parse(db internal.DB, config internal.Config) {
+	r, err := getRdbReader(config)
 	if err != nil {
-		fmt.Printf("error reading RDB file '%s'. Error is: %s", rdbPath, err)
-		return
+		fmt.Printf("error getting RDB reader. Error is: %s\n", err)
 	}
+	ParseFile(r, db)
+}
 
-	err = checkMagicString(r)
+func ParseFile(r *bufio.Reader, db internal.DB) {
+	err := checkMagicString(r)
 	if err != nil {
-		fmt.Printf("error reading RDB file '%s'. Error is: %s", rdbPath, err)
+		fmt.Printf("error reading magic string. Error is: %s\n", err)
 		return
 	}
 
 	rdbVersion, err := getRdbVersion(r)
 	if err != nil {
-		fmt.Printf("error reading RDB file '%s'. Error is: %s", rdbPath, err)
+		fmt.Printf("error reading RDB file version. Error is: %s\n", err)
 		return
 	}
-	fmt.Printf("parsing RDB file with version %d", rdbVersion)
+	fmt.Printf("parsing RDB file with version %d\n", rdbVersion)
 
 	if rdbVersion > 7 {
 		// TODO implement auxiliary fields (0xFA) parsing
 		_, err = r.ReadBytes(0xFE)
 		if err != nil {
-			fmt.Printf("error reading RDB file '%s'. Error is: %s", rdbPath, err)
+			fmt.Printf("error reading 'FE' op code. Error is: %s\n", err)
 			return
 		}
 		err = r.UnreadByte() // Unread 0xFE
 		if err != nil {
-			fmt.Printf("error reading RDB file '%s'. Error is: %s", rdbPath, err)
+			fmt.Printf("error unreading 'FE' op code. Error is: %s\n", err)
 			return
 		}
 	}
 
 	err = expectNextByte(r, 0xFE)
 	if err != nil {
-		fmt.Printf("error reading RDB file '%s'. Error is: %s", rdbPath, err)
+		fmt.Printf("error reading FE op code. Error is: %s\n", err)
 		return
 	}
 
 	dbNumber, err := readEncodedLength(r)
 	if err != nil {
-		fmt.Printf("error reading RDB file '%s'. Error is: %s", rdbPath, err)
+		fmt.Printf("error reading db number. Error is: %s\n", err)
 		return
 	}
-	fmt.Printf("reading db number %d", dbNumber)
+	fmt.Printf("read db number %d\n", dbNumber)
 
 	if rdbVersion == 7 {
-		expectNextByte(r, 0xFB)
-		dbHTsize, err := readEncodedLength(r)
+		err = expectNextByte(r, 0xFB)
 		if err != nil {
-			fmt.Printf("error reading RDB file '%s'. Error is: %s", rdbPath, err)
+			fmt.Printf("error reading FB op code. Error is: %s\n", err)
 			return
 		}
-		fmt.Printf("read database hash table size of %d", dbHTsize)
+		dbHTsize, err := readEncodedLength(r)
+		if err != nil {
+			fmt.Printf("error reading database hash table size. Error is: %s\n", err)
+			return
+		}
+		fmt.Printf("read database hash table size of %d\n", dbHTsize)
 
 		expiryHTsize, err := readEncodedLength(r)
 		if err != nil {
-			fmt.Printf("error reading RDB file '%s'. Error is: %s", rdbPath, err)
+			fmt.Printf("error reading expiry hash table size. Error is: %s\n", err)
 			return
 		}
-		fmt.Printf("read expiry hash table size of %d", expiryHTsize)
+		fmt.Printf("read expiry hash table size of %d\n", expiryHTsize)
 	}
 
-	// TODO read value-type (one byte) and get key (resp encoded string)
+	valueType, err := r.ReadByte()
+	if err != nil {
+		fmt.Printf("error reading value type. Error is: %s\n", err)
+		return
+	}
+	fmt.Printf("read value type '%d'\n", int(valueType))
 
+	keyLength, err := readEncodedLength(r)
+	if err != nil {
+		fmt.Printf("error reading key length. Error is: %s\n", err)
+		return
+	}
+	fmt.Printf("read keyLength '%d'\n", keyLength)
+	key, err := readNBytes(r, keyLength)
+	if err != nil {
+		fmt.Printf("error reading key. Error is: %s\n", err)
+		return
+	}
+	fmt.Printf("read key '%s'\n", string(key))
+
+	db.SetValue(string(key), internal.Entry{Value: "", PX: math.MaxInt64})
+}
+
+func getRdbReader(config internal.Config) (*bufio.Reader, error) {
+	dir := config.GetValue(internal.Dir)
+	dbFilename := config.GetValue(internal.Dbfilename)
+	if dir == "" || dbFilename == "" {
+		return nil, errors.New("read empty dir or dbFilename options")
+	}
+	rdbPath := filepath.Join(dir, dbFilename)
+
+	file, err := os.Open(rdbPath)
+	if err != nil {
+		return nil, fmt.Errorf("error opening RDB file '%s'. Error is: %s", rdbPath, err)
+	}
+	defer file.Close()
+
+	return bufio.NewReader(file), nil
 }
 
 func checkMagicString(r *bufio.Reader) error {
-	magicString := []byte{52, 45, 44, 49, 53}
+	magicString := []byte{0x52, 0x45, 0x44, 0x49, 0x53}
 
 	for i := 0; i < len(magicString); i++ {
 		err := expectNextByte(r, magicString[i])
