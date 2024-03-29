@@ -10,7 +10,7 @@ import (
 	"github.com/codecrafters-io/redis-starter-go/app/internal/rdb"
 )
 
-func TestMagicString(t *testing.T) {
+func TestRdbParser(t *testing.T) {
 	db := internal.InitializeDB()
 	fileData := []byte{
 		0x52, 0x45, 0x44, 0x49, 0x53, //REDIS

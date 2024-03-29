@@ -30,11 +30,12 @@ const (
 )
 
 func Parse(db internal.DB, config internal.Config) {
-	r, err := getRdbReader(config)
+	reader, file, err := getRdbReader(config)
 	if err != nil {
 		fmt.Printf("error getting RDB reader. Error is: %s\n", err)
 	}
-	ParseFile(r, db)
+	defer file.Close()
+	ParseFile(reader, db)
 }
 
 func ParseFile(r *bufio.Reader, db internal.DB) {
@@ -122,21 +123,20 @@ func ParseFile(r *bufio.Reader, db internal.DB) {
 	db.SetValue(string(key), internal.Entry{Value: "", PX: math.MaxInt64})
 }
 
-func getRdbReader(config internal.Config) (*bufio.Reader, error) {
+func getRdbReader(config internal.Config) (*bufio.Reader, *os.File, error) {
 	dir := config.GetValue(internal.Dir)
 	dbFilename := config.GetValue(internal.Dbfilename)
 	if dir == "" || dbFilename == "" {
-		return nil, errors.New("read empty dir or dbFilename options")
+		return nil, nil, errors.New("read empty dir or dbFilename options")
 	}
 	rdbPath := filepath.Join(dir, dbFilename)
 
 	file, err := os.Open(rdbPath)
 	if err != nil {
-		return nil, fmt.Errorf("error opening RDB file '%s'. Error is: %s", rdbPath, err)
+		return nil, nil, fmt.Errorf("error opening RDB file '%s'. Error is: %s", rdbPath, err)
 	}
-	defer file.Close()
 
-	return bufio.NewReader(file), nil
+	return bufio.NewReader(file), file, nil
 }
 
 func checkMagicString(r *bufio.Reader) error {
