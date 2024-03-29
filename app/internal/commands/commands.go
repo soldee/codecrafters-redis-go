@@ -20,6 +20,7 @@ const (
 	SET    Command = "set"
 	GET    Command = "get"
 	CONFIG Command = "config"
+	KEYS   Command = "keys"
 )
 
 type Option string
@@ -111,4 +112,26 @@ func HandleGet(raw *[]byte, arrayLength int, db internal.DB) []byte {
 		return dataTypes.NULL_BULK_STRING
 	}
 	return dataTypes.ToBulkString(value)
+}
+
+func HandleKeys(raw *[]byte, arrayLength int, db internal.DB) []byte {
+	if arrayLength < 1 {
+		return dataTypes.ToSimpleError(&dataTypes.MissingArgument{Cmd: string(GET)})
+	}
+
+	pattern, err := dataTypes.GetNextStringInArray(raw, &arrayLength)
+	if err != nil {
+		fmt.Printf("Received error when getting pattern from KEYS Command: %s", err.Error())
+		return dataTypes.ToSimpleError(&dataTypes.InvalidSyntax{})
+	}
+
+	if pattern != "*" {
+		return dataTypes.ToSimpleError(&dataTypes.UnknownCommand{Cmd: string(KEYS)})
+	}
+
+	keys := make([]byte, 0, len(db.Table))
+	for k := range db.Table {
+		keys = append(keys, dataTypes.ToBulkString(k)...)
+	}
+	return dataTypes.ToArray(keys)
 }

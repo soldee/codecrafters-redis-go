@@ -59,6 +59,8 @@ func HandleCommand(cmd string, request *[]byte, arrayLength int, db internal.DB,
 		return HandleGet(request, arrayLength, db)
 	case CONFIG:
 		return HandleConfig(request, arrayLength, config)
+	case KEYS:
+		return HandleKeys(request, arrayLength, db)
 	default:
 		return dataTypes.ToSimpleError(&dataTypes.UnknownCommand{Cmd: cmd})
 	}

@@ -1,6 +1,7 @@
 package commands_test
 
 import (
+	"math"
 	"strconv"
 	"testing"
 	"time"
@@ -93,6 +94,19 @@ func TestConfigGetIfEmpty(t *testing.T) {
 	response := commands.HandleRequest(&req, internal.DB{}, config)
 	if string(response) != "*2\r\n$3\r\ndir\r\n$0\r\n\r\n" {
 		t.Errorf("Returned response different than dir: %s", string(response))
+		t.FailNow()
+	}
+}
+
+func TestRequestAllKeys(t *testing.T) {
+	db := internal.InitializeDB()
+	db.SetValue("foo", internal.Entry{Value: "", PX: math.MaxInt64})
+	config := internal.InitializeConfig([]string{})
+
+	req := []byte("*2\r\n$4\r\nkeys\r\n$1\r\n*\r\n")
+	response := commands.HandleRequest(&req, db, config)
+	if string(response) != "*1\r\n$3\r\nfoo\r\n" {
+		t.Errorf("Returned response different than foo: %s", string(response))
 		t.FailNow()
 	}
 }
