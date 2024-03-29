@@ -35,19 +35,19 @@ func ParseFile(parser rdbinternal.RdbParser, db internal.DB) {
 	}
 	fmt.Printf("parsing RDB file with version %d\n", rdbVersion)
 
-	if rdbVersion > 7 {
-		// TODO implement auxiliary fields (0xFA) parsing
-		_, err = parser.Reader.ReadBytes(0xFE)
-		if err != nil {
-			fmt.Printf("error reading 'FE' op code. Error is: %s\n", err)
-			return
-		}
-		err = parser.Reader.UnreadByte() // Unread 0xFE
-		if err != nil {
-			fmt.Printf("error unreading 'FE' op code. Error is: %s\n", err)
-			return
-		}
+	//if rdbVersion > 7 {
+	// TODO implement auxiliary fields (0xFA) parsing
+	_, err = parser.Reader.ReadBytes(0xFE)
+	if err != nil {
+		fmt.Printf("error reading 'FE' op code. Error is: %s\n", err)
+		return
 	}
+	err = parser.Reader.UnreadByte() // Unread 0xFE
+	if err != nil {
+		fmt.Printf("error unreading 'FE' op code. Error is: %s\n", err)
+		return
+	}
+	//}
 
 	err = rdbinternal.ExpectNextByte(parser.Reader, 0xFE)
 	if err != nil {
@@ -62,26 +62,26 @@ func ParseFile(parser rdbinternal.RdbParser, db internal.DB) {
 	}
 	fmt.Printf("read db number %d\n", dbNumber)
 
-	if rdbVersion > 7 {
-		err = rdbinternal.ExpectNextByte(parser.Reader, 0xFB)
-		if err != nil {
-			fmt.Printf("error reading FB op code. Error is: %s\n", err)
-			return
-		}
-		dbHTsize, err := parser.ReadEncodedLength()
-		if err != nil {
-			fmt.Printf("error reading database hash table size. Error is: %s\n", err)
-			return
-		}
-		fmt.Printf("read database hash table size of %d\n", dbHTsize)
-
-		expiryHTsize, err := parser.ReadEncodedLength()
-		if err != nil {
-			fmt.Printf("error reading expiry hash table size. Error is: %s\n", err)
-			return
-		}
-		fmt.Printf("read expiry hash table size of %d\n", expiryHTsize)
+	//if rdbVersion > 7 {
+	err = rdbinternal.ExpectNextByte(parser.Reader, 0xFB)
+	if err != nil {
+		fmt.Printf("error reading FB op code. Error is: %s\n", err)
+		return
 	}
+	dbHTsize, err := parser.ReadEncodedLength()
+	if err != nil {
+		fmt.Printf("error reading database hash table size. Error is: %s\n", err)
+		return
+	}
+	fmt.Printf("read database hash table size of %d\n", dbHTsize)
+
+	expiryHTsize, err := parser.ReadEncodedLength()
+	if err != nil {
+		fmt.Printf("error reading expiry hash table size. Error is: %s\n", err)
+		return
+	}
+	fmt.Printf("read expiry hash table size of %d\n", expiryHTsize)
+	//}
 
 	valueType, err := parser.Reader.ReadByte()
 	if err != nil {
