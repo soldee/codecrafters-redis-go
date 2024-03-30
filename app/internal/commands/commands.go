@@ -129,9 +129,9 @@ func HandleKeys(raw *[]byte, arrayLength int, db internal.DB) []byte {
 		return dataTypes.ToSimpleError(&dataTypes.UnknownCommand{Cmd: string(KEYS)})
 	}
 
-	keys := make([]byte, 0, len(db.Table))
+	keys := make([][]byte, 0, len(db.Table))
 	for k := range db.Table {
-		keys = append(keys, dataTypes.ToBulkString(k)...)
+		keys = append(keys, dataTypes.ToBulkString(k))
 	}
-	return dataTypes.ToArray(keys)
+	return dataTypes.ToArray(keys...)
 }

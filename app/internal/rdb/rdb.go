@@ -83,7 +83,9 @@ func ParseFile(parser rdbinternal.RdbParser, db internal.DB) {
 	fmt.Printf("read expiry hash table size of %d\n", expiryHTsize)
 	//}
 
-	readAndSetKeyValue(parser, db)
+	for i := 0; i < dbHTsize; i++ {
+		readAndSetKeyValue(parser, db)
+	}
 }
 
 func readAndSetKeyValue(parser rdbinternal.RdbParser, db internal.DB) {
