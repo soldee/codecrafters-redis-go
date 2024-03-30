@@ -83,6 +83,10 @@ func ParseFile(parser rdbinternal.RdbParser, db internal.DB) {
 	fmt.Printf("read expiry hash table size of %d\n", expiryHTsize)
 	//}
 
+	readAndSetKeyValue(parser, db)
+}
+
+func readAndSetKeyValue(parser rdbinternal.RdbParser, db internal.DB) {
 	valueType, err := parser.Reader.ReadByte()
 	if err != nil {
 		fmt.Printf("error reading value type. Error is: %s\n", err)
@@ -103,5 +107,22 @@ func ParseFile(parser rdbinternal.RdbParser, db internal.DB) {
 	}
 	fmt.Printf("read key '%s'\n", string(key))
 
-	db.SetValue(string(key), internal.Entry{Value: "", PX: math.MaxInt64})
+	switch rdbinternal.ValueType(valueType) {
+	case rdbinternal.StringType:
+		strLength, err := parser.ReadEncodedLength()
+		if err != nil {
+			fmt.Printf("error reading string length: %s\n", err)
+			return
+		}
+		fmt.Printf("read string length %d\n", strLength)
+		strBytes, err := rdbinternal.ReadNBytes(parser.Reader, strLength)
+		fmt.Printf("read string '%s'", string(strBytes))
+		if err != nil {
+			fmt.Printf("error reading string: %s\n", err)
+			return
+		}
+		db.SetValue(string(key), internal.Entry{Value: string(strBytes), PX: math.MaxInt64})
+	default:
+		fmt.Printf("Value type '%d' not supported\n", valueType)
+	}
 }
