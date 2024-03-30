@@ -118,7 +118,7 @@ func readAndSetKeyValue(parser rdbinternal.RdbParser, db internal.DB) {
 		}
 		fmt.Printf("read string length %d\n", strLength)
 		strBytes, err := rdbinternal.ReadNBytes(parser.Reader, strLength)
-		fmt.Printf("read string '%s'", string(strBytes))
+		fmt.Printf("read string '%s'\n", string(strBytes))
 		if err != nil {
 			fmt.Printf("error reading string: %s\n", err)
 			return
