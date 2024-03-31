@@ -99,9 +99,7 @@ func ParseFile(parser rdbinternal.RdbParser, db internal.DB) {
 			}
 			px := int64(binary.LittleEndian.Uint32(expirySeconds)) * 1000
 			fmt.Printf("read expiry %d\n", px)
-			if px > time.Now().UnixMilli() {
-				readAndSetKeyValue(parser, db, px)
-			}
+			readAndSetKeyValue(parser, db, px)
 		case 0xFC:
 			expirySeconds, err := rdbinternal.ReadNBytes(parser.Reader, 8)
 			if err != nil {
@@ -109,9 +107,7 @@ func ParseFile(parser rdbinternal.RdbParser, db internal.DB) {
 			}
 			px := int64(binary.LittleEndian.Uint64(expirySeconds))
 			fmt.Printf("read expiry %d\n", px)
-			if px > time.Now().UnixMilli() {
-				readAndSetKeyValue(parser, db, px)
-			}
+			readAndSetKeyValue(parser, db, px)
 		default:
 			err := parser.Reader.UnreadByte()
 			if err != nil {
@@ -158,7 +154,9 @@ func readAndSetKeyValue(parser rdbinternal.RdbParser, db internal.DB, px int64) 
 			fmt.Printf("error reading string: %s\n", err)
 			return
 		}
-		db.SetValue(string(key), internal.Entry{Value: string(strBytes), PX: px})
+		if px > time.Now().UnixMilli() {
+			db.SetValue(string(key), internal.Entry{Value: string(strBytes), PX: px})
+		}
 	default:
 		fmt.Printf("Value type '%d' not supported\n", valueType)
 	}
