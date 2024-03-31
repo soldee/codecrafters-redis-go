@@ -1,8 +1,10 @@
 package rdb
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/codecrafters-io/redis-starter-go/app/internal"
 	rdbinternal "github.com/codecrafters-io/redis-starter-go/app/internal/rdb/internal"
@@ -84,11 +86,44 @@ func ParseFile(parser rdbinternal.RdbParser, db internal.DB) {
 	//}
 
 	for i := 0; i < dbHTsize; i++ {
-		readAndSetKeyValue(parser, db)
+		b, err := parser.Reader.ReadByte()
+		if err != nil {
+			fmt.Printf("error reading next key. Error is: %s", err)
+			return
+		}
+		switch b {
+		case 0xFD:
+			expirySeconds, err := rdbinternal.ReadNBytes(parser.Reader, 4)
+			if err != nil {
+				fmt.Printf("error reading FD expiry seconds")
+			}
+			px := int64(binary.LittleEndian.Uint32(expirySeconds)) * 1000
+			fmt.Printf("read expiry %d\n", px)
+			if px > time.Now().UnixMilli() {
+				readAndSetKeyValue(parser, db, px)
+			}
+		case 0xFC:
+			expirySeconds, err := rdbinternal.ReadNBytes(parser.Reader, 8)
+			if err != nil {
+				fmt.Printf("error reading FC expiry seconds")
+			}
+			px := int64(binary.LittleEndian.Uint64(expirySeconds))
+			fmt.Printf("read expiry %d\n", px)
+			if px > time.Now().UnixMilli() {
+				readAndSetKeyValue(parser, db, px)
+			}
+		default:
+			err := parser.Reader.UnreadByte()
+			if err != nil {
+				fmt.Printf("error unreading byte. Error is: %s", err)
+				return
+			}
+			readAndSetKeyValue(parser, db, math.MaxInt64)
+		}
 	}
 }
 
-func readAndSetKeyValue(parser rdbinternal.RdbParser, db internal.DB) {
+func readAndSetKeyValue(parser rdbinternal.RdbParser, db internal.DB, px int64) {
 	valueType, err := parser.Reader.ReadByte()
 	if err != nil {
 		fmt.Printf("error reading value type. Error is: %s\n", err)
@@ -123,7 +158,7 @@ func readAndSetKeyValue(parser rdbinternal.RdbParser, db internal.DB) {
 			fmt.Printf("error reading string: %s\n", err)
 			return
 		}
-		db.SetValue(string(key), internal.Entry{Value: string(strBytes), PX: math.MaxInt64})
+		db.SetValue(string(key), internal.Entry{Value: string(strBytes), PX: px})
 	default:
 		fmt.Printf("Value type '%d' not supported\n", valueType)
 	}
