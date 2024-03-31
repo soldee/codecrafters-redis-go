@@ -120,3 +120,34 @@ func TestRdbParserWithExpiryKeysAndRegularKeys(t *testing.T) {
 		t.Error("Did not expect key 'testKey2' to be present in db")
 	}
 }
+
+func TestRdbParserWithExpiryKeys(t *testing.T) {
+	db := internal.InitializeDB()
+	fileData := []byte{
+		0x52, 0x45, 0x44, 0x49, 0x53, //REDIS
+		0x30, 0x30, 0x30, 0x38, //0008
+		0xFE, 0x00, //FE
+		0xFB, 0x01, 0x01, //FB hashTableSize expiryHashTableSize
+	}
+	fileData = append(fileData, 0xFD)
+	pxBytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(pxBytes, uint32(time.Now().Unix()-5000))
+	fileData = append(fileData, pxBytes...)
+	fileData = append(fileData, []byte{0x00, 0x07}...)
+	fileData = append(fileData, "testKey"...)
+	fileData = append(fileData, 0x03)
+	fileData = append(fileData, "val"...)
+
+	r := bufio.NewReader(bytes.NewReader(fileData))
+	parser := rdbinternal.InitializeRdbParser(r)
+	rdb.ParseFile(parser, db)
+
+	_, exists := db.Table["testKey"]
+	if exists {
+		t.Error("Did not expect key 'testKey' to be present in db")
+	}
+	_, exists = db.GetValue("testKey")
+	if exists {
+		t.Error("Did not expect key 'testKey' to be present in db")
+	}
+}
