@@ -131,7 +131,10 @@ func HandleKeys(raw *[]byte, arrayLength int, db internal.DB) []byte {
 
 	keys := make([][]byte, 0, len(db.Table))
 	for k := range db.Table {
-		keys = append(keys, dataTypes.ToBulkString(k))
+		_, exists := db.GetValue(k)
+		if exists {
+			keys = append(keys, dataTypes.ToBulkString(k))
+		}
 	}
 	return dataTypes.ToArray(keys...)
 }

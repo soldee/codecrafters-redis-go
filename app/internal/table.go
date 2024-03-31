@@ -25,7 +25,7 @@ func (db DB) GetValue(key string) (string, bool) {
 		return "", false
 	}
 	if entry.PX < time.Now().UnixMilli() {
-		delete(db.Table, entry.Value)
+		delete(db.Table, key)
 		return "", false
 	}
 	return entry.Value, true
